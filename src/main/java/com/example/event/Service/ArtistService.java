@@ -1,76 +1,71 @@
-package com.example.event.Service;
+package com.example.event.Controller;
 
+
+import com.example.event.ApiResponse.Api;
 import com.example.event.Model.Artist;
-import com.example.event.Repository.ArtistRepository;
-import com.example.event.Repository.PurchaseRepository;
-import com.example.event.Repository.TicketRepository;
-import org.springframework.stereotype.Service;
+import com.example.event.Service.ArtistService;
+import com.example.event.Service.PurchaseService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 
-@Service
-public class ArtistService {
+@RestController
+@RequestMapping("/api/v1/artist")
+public class ArtistController {
 
-    final ArtistRepository artistRepository;
-    final PurchaseRepository purchaseRepository;
-    final TicketRepository ticketRepository;
+    final ArtistService artistService;
+    final PurchaseService purchaseService;
 
-    public ArtistService(ArtistRepository artistRepository, PurchaseRepository purchaseRepository, TicketRepository ticketRepository) {
-        this.artistRepository = artistRepository;
-        this.purchaseRepository = purchaseRepository;
-        this.ticketRepository = ticketRepository;
+    public ArtistController(ArtistService artistService, PurchaseService purchaseService) {
+        this.artistService = artistService;
+        this.purchaseService = purchaseService;
     }
 
-    public List getall(){
-        return artistRepository.findAll();
+
+    @PostMapping("/add")
+    public ResponseEntity add(@Valid @RequestBody Artist artist){
+        artistService.add(artist);
+        return ResponseEntity.status(200).body(new Api("Added successfully"));
+    }
+    @GetMapping("/getall")
+    public ResponseEntity getall(){
+        return ResponseEntity.status(200).body(artistService.getall());
     }
 
-    public Boolean add(Artist artist){
-        artistRepository.save(artist);
-        return true;
-    }
-
-    public boolean updateArtist(Artist artist,int id){
-        Artist oldArtist=artistRepository.getArtistById(id);
-        if (oldArtist==null){
-            return false;
+    @PutMapping("/update/{id}")
+    public ResponseEntity update(@Valid @RequestBody Artist artist, Errors errors, @PathVariable int id){
+        if (errors.hasErrors()){
+            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
         }
-        oldArtist.setName(artist.getName());
-        oldArtist.setField(artist.getField());
-        oldArtist.setOriginCountry(artist.getOriginCountry());
-        artistRepository.save(oldArtist);
-        return true;
+        artistService.updateArtist(artist,id);
+        return ResponseEntity.status(200).body(new Api("Artist updated successfully"));
     }
 
-    public boolean deleteArtist(int id){
-        Artist oldeArtist=artistRepository.getArtistById(id);
-        if (oldeArtist==null){
-            return false;
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity delete(Errors errors,@PathVariable int id){
+        if (errors.hasErrors()){
+            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
         }
-        artistRepository.delete(oldeArtist);
-        return true;
+        artistService.deleteArtist(id);
+        return ResponseEntity.status(200).body(new Api("Deleted successfully"));
     }
 
-    //----------------------------------------------------------------------------
+    //-----------------------------------------------
 
 
-
-
-
-    public String upgradeFeaturedArtists(Double artistId) {
-        List artistIds = Collections.singletonList(ticketRepository.getTotalSalesByArtist(artistId));
-
-        if (artistIds.isEmpty()) {
-            return "No artists passed the sales threshold";
-        }
-        List<Artist> artists = artistRepository.findAllById(artistIds);
-        for (Artist artist : artists) {
-            artist.setFeatured(true);
-        }
-        artistRepository.saveAll(artists);
-        return "Upgraded " + artists.size() + " artists to Featured";
+    //1 Promoting the Artist after hitting the products sales target
+    @PostMapping("/promote/{threshold}")
+    public ResponseEntity upgradeArtists(@PathVariable Double threshold) {
+        String result = artistService.upgradeFeaturedArtists(threshold);
+        return ResponseEntity.ok(result);
     }
+
+
+
+
 
 
 }
