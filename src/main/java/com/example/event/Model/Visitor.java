@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,6 +28,13 @@ public class Visitor {
     private String email;
     @NotNull (message = "phone number required")
     private Integer phone;
+
+    @NotNull(message = "age is required")
+    private Integer age;
+
+    @NotEmpty(message = "gender is required")
+    @Pattern(regexp = "^(male|female)$", message = "gender must be either 'male' or 'female'")
+    private String gender;
 
 
 }
