@@ -10,48 +10,77 @@ import java.util.List;
 @Service
 public class DiscountService {
 
-    final DiscountRepository ratingRepository;
+    final DiscountRepository discountRepository;
 
-    public DiscountService(DiscountRepository ratingRepository) {
-        this.ratingRepository = ratingRepository;
+    public DiscountService(DiscountRepository discountRepository) {
+        this.discountRepository = discountRepository;
     }
 
-    public Boolean addRate(Discount rating){
-        ratingRepository.save(rating);
+    public double applyDiscount(double originalPrice, Integer wId) {
+        if (isDiscountApplicable(wId)) {
+            Double discountRate = getDiscountRateByWorkshop(wId);
+            if (discountRate != null) {
+                return originalPrice * (1 - discountRate); 
+            }
+        }
+        return originalPrice;
+    }
+
+    public boolean isDiscountApplicable(Integer wId) {
+        LocalDate currentDate = LocalDate.now();
+       
+        return discountRepository.findBywId(Long.valueOf(wId)).stream()
+                .anyMatch(discount -> discount.getDiscountRate() > 0 && discount.getDiscountRate() != null);
+    }
+
+    // Get the discount rate for a specific workshop
+    public Double getDiscountRateByWorkshop(Integer wId) {
+        List<Discount> discounts = discountRepository.findBywId(Long.valueOf(wId));
+        if (!discounts.isEmpty()) {
+            return discounts.get(0).getDiscountRate(); 
+        }
+        return null;
+    }
+
+   
+    public Boolean addDiscount(Discount discount) {
+        discountRepository.save(discount);
         return true;
     }
 
-    public List getall(){
-        return ratingRepository.findAll();
+
+    public List<Discount> getAllDiscounts() {
+        return discountRepository.findAll();
     }
 
-    public Boolean updateRate(Discount rating, int id){
-        Discount oldR=ratingRepository.getReferenceById(id);
-        if (oldR==null){
+
+    
+    public Boolean updateDiscount(Discount discount, int id) {
+        Discount existingDiscount = discountRepository.getReferenceById(id);
+        if (existingDiscount == null) {
             return false;
         }
-        oldR.setReview(rating.getReview());
-        oldR.setStars(rating.getStars());
-        oldR.setWId(rating.getWId());
-        ratingRepository.save(oldR);
+        discountRepository.save(existingDiscount);
         return true;
     }
 
-    public Boolean deleteR(int id){
-        Discount oldR=ratingRepository.getReferenceById(id);
-        if (oldR==null){
+    public Boolean deleteDiscount(int id) {
+        Discount existingDiscount = discountRepository.getReferenceById(id);
+        if (existingDiscount == null) {
             return false;
         }
-        ratingRepository.delete(oldR);
+        discountRepository.delete(existingDiscount);
         return true;
     }
+
+
 
     //-----------------------------------------------------------------
 
     private static final List<LocalDate> DISCOUNT_DATES = List.of(
-            LocalDate.of(2025, 9, 23), // Saudi National Day (Sept 23)
-            LocalDate.of(2025, 2, 22), // Saudi Founding Day (Feb 22)
-            LocalDate.of(2025, 3, 11)  // Saudi Flag Day (Mar 11)
+            LocalDate.of(2025, 9, 23),
+            LocalDate.of(2025, 2, 22), 
+            LocalDate.of(2025, 3, 11)  
     );
 
     public boolean isDiscountApplicable() {
@@ -61,7 +90,7 @@ public class DiscountService {
 
     public double applyDiscount(double originalPrice) {
         if (isDiscountApplicable()) {
-            return originalPrice * 0.85; // Apply 15% discount
+            return originalPrice * 0.85; 
         }
         return originalPrice;
     }
