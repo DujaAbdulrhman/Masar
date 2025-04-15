@@ -54,26 +54,11 @@ public class TicketController {
     //-----------------------------------------------
 
 
-    //5 the workshop booking
-    @PostMapping("/reserve/{vId}/{wId}")
-    public ResponseEntity<String> reserveWorkshop(
-            @PathVariable Integer vId,
-            @PathVariable Integer wId,
-            @RequestParam String ticketDate) {
-
-        if (vId == null || wId == null || ticketDate == null) {
-            return ResponseEntity.badRequest().body("All parameters are required");
-        }
-
-        String result = ticketService.reserveTicket(vId, wId, ticketDate);
-
-        return switch (result) {
-            case "Visitor not found", "Workshop not found",
-                 "No available spots in the workshop",
-                 "Invalid ticket date format" ->
-                    ResponseEntity.badRequest().body(result);
-            default -> ResponseEntity.ok(result);
-        };
+     //5 ages avareg
+    @GetMapping("/average-age")
+    public ResponseEntity<Double> getAverageVisitorAge() {
+        Double averageAge = ticketService.getAverageAgeOfVisitorsWhoBooked();
+        return ResponseEntity.status(200).body(averageAge);
     }
 
 
