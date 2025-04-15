@@ -20,20 +20,10 @@ public class Discount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @JsonProperty("review")
-    @NotEmpty
-    @Column(columnDefinition = "review")
-    private String review; // نص التقييم
-
-    @JsonProperty("stars")
-    @Column(columnDefinition = "stars")
-    @Min(0)
-    @Max(5)
-    @NotNull(message = "enter the stars rating")
-    private Double stars; // التقييم
-
     @JsonProperty("wId")
-    @Column(columnDefinition = "wId")
-    @NotNull(message = "you should enter the wId")
-    private Integer wId; // معرف الورشة
+    @NotNull(message = "Workshop ID is required")
+    private Integer wId;
+
+    private Double discountRate;
+
 }
