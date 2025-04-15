@@ -11,61 +11,57 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/v1/rating")
+@RequestMapping("/api/v1/discount")
 public class DiscountController {
 
     final DiscountService discountService;
     final ProductService productService;
-    final ArtistService artistService;
 
-
-    public DiscountController(DiscountService discountService, ProductService productService, ArtistService artistService) {
+    public DiscountController(DiscountService discountService, ProductService productService) {
         this.discountService = discountService;
         this.productService = productService;
-        this.artistService = artistService;
     }
 
     @PostMapping("/add")
-    public ResponseEntity addDiscount(@RequestBody Discount discount){
+    public ResponseEntity addDiscount(@RequestBody Discount discount) {
+        discountService.addDiscount(discount);
+        return ResponseEntity.status(200).body(new Api("Discount added successfully"));
+    }
 
-        discountService.applyDiscount(28.5);
-        return ResponseEntity.status(200).body(new Api("rating added successfully"));
-    }
+   
     @GetMapping("/getall")
-    public ResponseEntity getall(){
-        return ResponseEntity.status(200).body(artistService.getall());
+    public ResponseEntity getAllDiscounts() {
+        return ResponseEntity.status(200).body(discountService.getAllDiscounts());
     }
+
 
     @PutMapping("/update/{id}")
-    public ResponseEntity update(@Valid @RequestBody Discount discount, Errors errors, @PathVariable int id){
-        if (errors.hasErrors()){
-            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
-        }
-        discountService.updateRate(discount,id);
-        return ResponseEntity.status(200).body(new Api("Artist updated successfully"));
+    public ResponseEntity update(@RequestBody Discount discount, @PathVariable int id) {
+        discountService.updateDiscount(discount, id);
+        return ResponseEntity.status(200).body(new Api("Discount updated successfully"));
     }
 
+  
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity delete(Errors errors,@PathVariable int id){
-        if (errors.hasErrors()){
-            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
-        }
-        discountService.deleteR(id);
-        return ResponseEntity.status(200).body(new Api("Deleted successfully"));
+    public ResponseEntity delete(@PathVariable int id) {
+        discountService.deleteDiscount(id);
+        return ResponseEntity.status(200).body(new Api("Discount deleted successfully"));
     }
 
-
-
-
-
-    //2 discount in specific date
+    
     @PostMapping("/apply/{pId}")
     public ResponseEntity<Product> applyDiscount(@PathVariable Integer pId) {
-        Product updatedProduct = productService.applyDiscount(pId);
+        Product updatedProduct = productService.applyDiscount(pId); // This assumes applyDiscount is implemented in ProductService
         return ResponseEntity.ok(updatedProduct);
     }
 
-
-
+    // 2
+    @GetMapping("/workshop/{wId}")
+    public ResponseEntity getDiscountsByWorkshop(@PathVariable Integer wId) {
+        Double discounts = discountService.getDiscountRateByWorkshop(wId);
+        return ResponseEntity.status(200).body(discounts);
+    }
 }
