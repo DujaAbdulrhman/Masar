@@ -66,48 +66,22 @@ public class TicketService {
     //-----------------------------------------------
 
 
-    public String reserveTicket(Integer visitorId, Integer workShopId, String ticketDate) {
-        if (visitorId == null || workShopId == null || ticketDate == null) {
-            return "Required parameters are missing";
+    public Double getAverageAgeOfVisitorsWhoBooked() {
+        List<Integer> visitorIds = ticketRepository.findDistinctVisitorIdsWhoBooked();
+
+        if (visitorIds.isEmpty()) {
+            return 0.0;
         }
 
-        WorkShop workShop = workShopRepository.findById(workShopId)
-                .orElseThrow(() -> new IllegalArgumentException("Workshop not found with id: " + workShopId));
+        List<Visitor> visitors = visitorRepository.findAllById(visitorIds);
 
+        double average = visitors.stream()
+                .filter(v -> v.getAge() != null)
+                .mapToInt(Visitor::getAge)
+                .average()
+                .orElse(0.0);
 
-        Optional<Visitor> visitorOpt = visitorRepository.findById(visitorId);
-        if (visitorOpt.isEmpty()) {
-            return "Visitor not found";
-        }
-
-        if (workShop.getCapacity() <= 0) {
-            return "No available spots in the workshop";
-        }
-
-        if (ticketRepository.existsByVIdAndWId(visitorId, workShopId)) {
-            return "You have already reserved this workshop";
-        }
-
-        LocalDate parsedDate;
-        try {
-            parsedDate = LocalDate.parse(ticketDate);
-        } catch (DateTimeParseException e) {
-            return "Invalid ticket date format. Please use YYYY-MM-DD";
-        }
-
-
-        Ticket ticket = new Ticket();
-        ticket.setVId(visitorId);
-        ticket.setWId(workShopId);
-        ticket.setTicketDate(parsedDate);
-        ticket.setPrice(workShop.getPrice());
-
-        ticketRepository.save(ticket);
-
-        workShop.setCapacity(workShop.getCapacity() - 1);
-        workShopRepository.save(workShop);
-
-        return "Ticket reserved successfully!";
+        return average;
     }
 
     public String cancelReservation(Integer ticketId, Integer visitorId, Integer workshopId) {
