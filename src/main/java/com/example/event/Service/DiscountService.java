@@ -1,98 +1,67 @@
-package com.example.event.Service;
+package com.example.event.Controller;
 
+import com.example.event.ApiResponse.Api;
 import com.example.event.Model.Discount;
-import com.example.event.Repository.DiscountRepository;
-import org.springframework.stereotype.Service;
+import com.example.event.Model.Product;
+import com.example.event.Service.ArtistService;
+import com.example.event.Service.DiscountService;
+import com.example.event.Service.ProductService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
-@Service
-public class DiscountService {
+@RestController
+@RequestMapping("/api/v1/discount")
+public class DiscountController {
 
-    final DiscountRepository discountRepository;
+    final DiscountService discountService;
+    final ProductService productService;
 
-    public DiscountService(DiscountRepository discountRepository) {
-        this.discountRepository = discountRepository;
+    public DiscountController(DiscountService discountService, ProductService productService) {
+        this.discountService = discountService;
+        this.productService = productService;
     }
 
-    public double applyDiscount(double originalPrice, Integer wId) {
-        if (isDiscountApplicable(wId)) {
-            Double discountRate = getDiscountRateByWorkshop(wId);
-            if (discountRate != null) {
-                return originalPrice * (1 - discountRate); 
-            }
-        }
-        return originalPrice;
-    }
-
-    public boolean isDiscountApplicable(Integer wId) {
-        LocalDate currentDate = LocalDate.now();
-       
-        return discountRepository.findBywId(Long.valueOf(wId)).stream()
-                .anyMatch(discount -> discount.getDiscountRate() > 0 && discount.getDiscountRate() != null);
-    }
-
-    // Get the discount rate for a specific workshop
-    public Double getDiscountRateByWorkshop(Integer wId) {
-        List<Discount> discounts = discountRepository.findBywId(Long.valueOf(wId));
-        if (!discounts.isEmpty()) {
-            return discounts.get(0).getDiscountRate(); 
-        }
-        return null;
-    }
-
-   
-    public Boolean addDiscount(Discount discount) {
-        discountRepository.save(discount);
-        return true;
+    @PostMapping("/add")
+    public ResponseEntity addDiscount(@RequestBody Discount discount) {
+        discountService.addDiscount(discount);
+        return ResponseEntity.status(200).body(new Api("Discount added successfully"));
     }
 
 
-    public List<Discount> getAllDiscounts() {
-        return discountRepository.findAll();
+    @GetMapping("/getall")
+    public ResponseEntity getAllDiscounts() {
+        return ResponseEntity.status(200).body(discountService.getAllDiscounts());
     }
 
 
-    
-    public Boolean updateDiscount(Discount discount, int id) {
-        Discount existingDiscount = discountRepository.getReferenceById(id);
-        if (existingDiscount == null) {
-            return false;
-        }
-        discountRepository.save(existingDiscount);
-        return true;
-    }
-
-    public Boolean deleteDiscount(int id) {
-        Discount existingDiscount = discountRepository.getReferenceById(id);
-        if (existingDiscount == null) {
-            return false;
-        }
-        discountRepository.delete(existingDiscount);
-        return true;
+    @PutMapping("/update/{id}")
+    public ResponseEntity update(@RequestBody Discount discount, @PathVariable int id) {
+        discountService.updateDiscount(discount, id);
+        return ResponseEntity.status(200).body(new Api("Discount updated successfully"));
     }
 
 
-
-    //-----------------------------------------------------------------
-
-    private static final List<LocalDate> DISCOUNT_DATES = List.of(
-            LocalDate.of(2025, 9, 23),
-            LocalDate.of(2025, 2, 22), 
-            LocalDate.of(2025, 3, 11)  
-    );
-
-    public boolean isDiscountApplicable() {
-        LocalDate currentDate = LocalDate.now();
-        return DISCOUNT_DATES.contains(currentDate);
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity delete(@PathVariable int id) {
+        discountService.deleteDiscount(id);
+        return ResponseEntity.status(200).body(new Api("Discount deleted successfully"));
     }
 
-    public double applyDiscount(double originalPrice) {
-        if (isDiscountApplicable()) {
-            return originalPrice * 0.85; 
-        }
-        return originalPrice;
+
+    @PostMapping("/apply/{pId}")
+    public ResponseEntity<Product> applyDiscount(@PathVariable Integer pId) {
+        Product updatedProduct = productService.applyDiscount(pId); // This assumes applyDiscount is implemented in ProductService
+        return ResponseEntity.ok(updatedProduct);
     }
 
+    // 2
+    @GetMapping("/workshop/{wId}")
+    public ResponseEntity getDiscountsByWorkshop(@PathVariable Integer wId) {
+        Double discounts = discountService.getDiscountRateByWorkshop(wId);
+        return ResponseEntity.status(200).body(discounts);
+    }
 }
